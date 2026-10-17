@@ -1,0 +1,20 @@
+
+# Entorno virtual de Python
+.venv/
+venv/
+
+# Archivos temporales de Python
+__pycache__/
+*.pyc
+
+# Variables de entorno y credenciales
+.env
+.env.*
+!.env.example
+
+# Archivos de configuración local
+.vscode/
+
+# Archivos de pruebas
+.pytest_cache/
+.coverage
