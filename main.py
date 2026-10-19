@@ -1,15 +1,50 @@
 
 # Proyecto: MuebleTech VES
-# Sesión 3: API con Flask - Método GET
+# Sesión 4: API REST con Blueprints y Middlewares
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from app.routes.productos_routes import productos_bp
-
 
 # Crear aplicación Flask
 app = Flask(__name__)
+
 # Registrar las rutas del Blueprint
 app.register_blueprint(productos_bp)
+
+
+# Middleware básico: registrar las solicitudes HTTP
+@app.before_request
+def registrar_solicitud():
+    print(f"Solicitud recibida: {request.method} {request.path}")
+
+
+
+# Middleware básico: agregar encabezados HTTP
+@app.after_request
+def agregar_encabezados(response):
+
+    # Identificar nuestra aplicación en las respuestas
+    response.headers["X-Proyecto"] = "MuebleTech VES"
+
+    return response
+
+
+# Manejo de errores HTTP: ruta no encontrada
+@app.errorhandler(404)
+def pagina_no_encontrada(error):
+    return jsonify({
+        "mensaje": "La ruta solicitada no existe",
+        "codigo": 404
+    }), 404
+
+
+# Manejo de errores HTTP: error interno del servidor
+@app.errorhandler(500)
+def error_interno(error):
+    return jsonify({
+        "mensaje": "Ocurrió un error interno en el servidor",
+        "codigo": 500
+    }), 500
 
 
 # Ruta principal
