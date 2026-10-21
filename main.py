@@ -4,12 +4,18 @@
 
 from flask import Flask, jsonify, request
 from app.routes.productos_routes import productos_bp
+from flasgger import Swagger
 
 # Crear aplicación Flask
 app = Flask(__name__)
 
 # Registrar las rutas del Blueprint
 app.register_blueprint(productos_bp)
+
+
+# Configurar Swagger para documentar nuestra API REST
+swagger = Swagger(app)
+
 
 
 # Middleware básico: registrar las solicitudes HTTP

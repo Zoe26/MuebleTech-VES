@@ -1,0 +1,47 @@
+
+tags:
+  - Productos
+summary: Registrar un nuevo producto
+description: Registra un mueble industrial en MuebleTech VES.
+consumes:
+  - application/json
+produces:
+  - application/json
+
+parameters:
+  - in: body
+    name: producto
+    required: true
+    description: Datos del producto que se desea registrar.
+    schema:
+      type: object
+      required:
+        - codigo
+        - nombre
+        - precio
+        - stock
+        - categoria
+      properties:
+        codigo:
+          type: integer
+          example: 4
+        nombre:
+          type: string
+          example: Escritorio industrial
+        precio:
+          type: number
+          example: 750.0
+        stock:
+          type: integer
+          example: 8
+        categoria:
+          type: string
+          example: Escritorios
+
+responses:
+  201:
+    description: Producto registrado correctamente.
+  400:
+    description: Datos inválidos o campos obligatorios faltantes.
+  409:
+    description: Ya existe un producto con ese código.

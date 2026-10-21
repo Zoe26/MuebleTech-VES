@@ -1,0 +1,32 @@
+
+tags:
+  - Productos
+summary: Consultar todos los productos
+description: Obtiene el listado de muebles industriales registrados en MuebleTech VES.
+produces:
+  - application/json
+responses:
+  200:
+    description: Listado de productos obtenido correctamente.
+    schema:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        total:
+          type: integer
+        productos:
+          type: array
+          items:
+            type: object
+            properties:
+              codigo:
+                type: integer
+              nombre:
+                type: string
+              precio:
+                type: number
+              stock:
+                type: integer
+              categoria:
+                type: string

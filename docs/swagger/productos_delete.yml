@@ -1,0 +1,31 @@
+
+tags:
+  - Productos
+summary: Eliminar un producto
+description: Elimina un mueble industrial mediante su código.
+produces:
+  - application/json
+
+parameters:
+  - in: path
+    name: codigo
+    type: integer
+    required: true
+    description: Código del producto que se desea eliminar.
+    example: 4
+
+responses:
+  200:
+    description: Producto eliminado correctamente.
+    schema:
+      type: object
+      properties:
+        mensaje:
+          type: string
+          example: Producto eliminado correctamente
+        codigo:
+          type: integer
+          example: 4
+
+  404:
+    description: Producto no encontrado.
