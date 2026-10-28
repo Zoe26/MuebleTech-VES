@@ -1,8 +1,12 @@
 
 tags:
   - Productos
+
 summary: Eliminar un producto
-description: Elimina un mueble industrial mediante su código.
+description: >
+  Elimina un producto existente de PostgreSQL
+  utilizando SQLAlchemy y su código identificador.
+
 produces:
   - application/json
 
@@ -12,7 +16,6 @@ parameters:
     type: integer
     required: true
     description: Código del producto que se desea eliminar.
-    example: 4
 
 responses:
   200:
@@ -23,9 +26,34 @@ responses:
         mensaje:
           type: string
           example: Producto eliminado correctamente
-        codigo:
-          type: integer
-          example: 4
+        producto:
+          type: object
+          properties:
+            codigo:
+              type: integer
+              example: 5
+            nombre:
+              type: string
+              example: Mesa industrial premium
+            precio:
+              type: number
+              format: float
+              example: 650.00
+            stock:
+              type: integer
+              example: 10
+            id_categoria:
+              type: integer
+              example: 1
 
   404:
     description: Producto no encontrado.
+    schema:
+      type: object
+      properties:
+        mensaje:
+          type: string
+          example: Producto no encontrado
+
+  500:
+    description: Error al eliminar el producto.

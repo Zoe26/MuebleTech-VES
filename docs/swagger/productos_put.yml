@@ -1,10 +1,13 @@
 
 tags:
   - Productos
-summary: Actualizar un producto existente
-description: Actualiza los datos de un mueble industrial mediante su código.
+
+summary: Actualizar un producto
+description: Actualiza un producto existente en PostgreSQL mediante SQLAlchemy.
+
 consumes:
   - application/json
+
 produces:
   - application/json
 
@@ -14,10 +17,9 @@ parameters:
     type: integer
     required: true
     description: Código del producto que se desea actualizar.
-    example: 4
 
   - in: body
-    name: producto
+    name: body
     required: true
     description: Nuevos datos del producto.
     schema:
@@ -26,25 +28,28 @@ parameters:
         - nombre
         - precio
         - stock
-        - categoria
+        - id_categoria
       properties:
         nombre:
           type: string
-          example: Escritorio industrial premium
+          example: Mesa industrial premium
         precio:
           type: number
-          example: 890.0
+          format: float
+          example: 650.00
         stock:
           type: integer
           example: 12
-        categoria:
-          type: string
-          example: Escritorios
+        id_categoria:
+          type: integer
+          example: 1
 
 responses:
   200:
     description: Producto actualizado correctamente.
   400:
-    description: Datos inválidos o campos obligatorios faltantes.
+    description: Datos inválidos o categoría inexistente.
   404:
     description: Producto no encontrado.
+  500:
+    description: Error al actualizar el producto.

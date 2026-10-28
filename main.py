@@ -5,9 +5,27 @@
 from flask import Flask, jsonify, request
 from app.routes.productos_routes import productos_bp
 from flasgger import Swagger
+from config import Config
+from app.extensions import db, migrate
+# Modelos de PostgreSQL
+from app.models.categoria_db import CategoriaDB
+from app.models.producto_db import ProductoDB
+
+
 
 # Crear aplicación Flask
 app = Flask(__name__)
+
+
+# Configurar conexión con PostgreSQL
+app.config.from_object(Config)
+
+# Inicializar SQLAlchemy
+db.init_app(app)
+
+# Inicializar Flask-Migrate
+migrate.init_app(app, db)
+
 
 # Registrar las rutas del Blueprint
 app.register_blueprint(productos_bp)

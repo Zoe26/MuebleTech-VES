@@ -1,10 +1,16 @@
 
 tags:
   - Productos
-summary: Consultar todos los productos
-description: Obtiene el listado de muebles industriales registrados en MuebleTech VES.
+
+summary: Listar productos
+description: >
+  Consulta los productos registrados en PostgreSQL
+  mediante SQLAlchemy. Incluye el nombre de la
+  categoría asociada a cada producto.
+
 produces:
   - application/json
+
 responses:
   200:
     description: Listado de productos obtenido correctamente.
@@ -13,8 +19,10 @@ responses:
       properties:
         mensaje:
           type: string
+          example: Listado de productos
         total:
           type: integer
+          example: 4
         productos:
           type: array
           items:
@@ -22,11 +30,20 @@ responses:
             properties:
               codigo:
                 type: integer
+                example: 1
               nombre:
                 type: string
+                example: Mesa industrial
               precio:
                 type: number
+                format: float
+                example: 450.00
               stock:
                 type: integer
+                example: 10
               categoria:
                 type: string
+                example: Mesas
+
+  500:
+    description: Error interno del servidor.
