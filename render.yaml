@@ -7,7 +7,9 @@ services:
     plan: free
 
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT main:app
+   
+    startCommand: sh -c 'flask --app main db upgrade && exec gunicorn --bind 0.0.0.0:$PORT main:app'
+
 
     healthCheckPath: /
 
