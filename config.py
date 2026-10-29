@@ -9,26 +9,59 @@ load_dotenv()
 
 class Config:
 
+    # ==========================================
     # Configuración de PostgreSQL
-    SQLALCHEMY_DATABASE_URI = URL.create(
-        drivername="postgresql+psycopg",
-        username=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),
-        port=int(os.getenv("DB_PORT", "5432")),
-        database=os.getenv("DB_NAME")
-    )
+    # ==========================================
+
+    # Base de datos remota en Render
+    database_url = os.getenv("DATABASE_URL")
+
+    if database_url:
+
+        # Adaptar la URL al controlador psycopg
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace(
+                "postgres://",
+                "postgresql+psycopg://",
+                1
+            )
+
+        elif database_url.startswith("postgresql://"):
+            database_url = database_url.replace(
+                "postgresql://",
+                "postgresql+psycopg://",
+                1
+            )
+
+        SQLALCHEMY_DATABASE_URI = database_url
+
+    else:
+
+        # Base de datos local de PostgreSQL
+        SQLALCHEMY_DATABASE_URI = URL.create(
+            drivername="postgresql+psycopg",
+            username=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            host=os.getenv("DB_HOST"),
+            port=int(os.getenv("DB_PORT", "5432")),
+            database=os.getenv("DB_NAME")
+        )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # ==========================================
     # Configuración de JWT
+    # ==========================================
+
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=30)
     JWT_TOKEN_LOCATION = ["headers"]
-    
+
+    # ==========================================
+    # Configuración de CORS
+    # ==========================================
+
     CORS_ORIGINS = [
-    "http://localhost:5500",
-    "http://127.0.0.1:5500"
+        "http://localhost:5500",
+        "http://127.0.0.1:5500"
     ]
-
-
