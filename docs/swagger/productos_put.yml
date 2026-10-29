@@ -49,7 +49,16 @@ responses:
     description: Producto actualizado correctamente.
   400:
     description: Datos inválidos o categoría inexistente.
+  401:
+    description: Token JWT ausente, inválido o vencido.
+  403:
+    description: Usuario sin permisos de administrador.
   404:
     description: Producto no encontrado.
   500:
     description: Error al actualizar el producto.
+
+
+
+security:
+  - Bearer: []

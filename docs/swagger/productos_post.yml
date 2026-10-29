@@ -43,5 +43,17 @@ responses:
     description: Producto registrado correctamente.
   400:
     description: Datos inválidos o categoría inexistente.
+  
+  401:
+    description: Token JWT ausente, inválido o vencido.
+  403:
+    description: Usuario sin permisos de administrador.
+
   500:
     description: Error al registrar el producto.
+
+
+
+
+security:
+  - Bearer: []

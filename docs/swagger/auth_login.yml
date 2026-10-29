@@ -1,0 +1,79 @@
+
+tags:
+  - Autenticación
+
+summary: Iniciar sesión
+description: >
+  Autentica al usuario mediante correo y contraseña.
+  Verifica la contraseña utilizando bcrypt y genera
+  un token JWT con una duración de 30 minutos.
+  El token permite acceder a los endpoints protegidos
+  según el rol del usuario.
+
+consumes:
+  - application/json
+
+produces:
+  - application/json
+
+parameters:
+  - in: body
+    name: body
+    required: true
+    description: Credenciales para iniciar sesión.
+    schema:
+      type: object
+      required:
+        - correo
+        - password
+      properties:
+        correo:
+          type: string
+          format: email
+          example: usuario.prueba@example.com
+        password:
+          type: string
+          format: password
+          example: ClaveSegura2026!
+
+responses:
+  200:
+    description: Inicio de sesión exitoso.
+    schema:
+      type: object
+      properties:
+        mensaje:
+          type: string
+          example: Inicio de sesión exitoso
+        access_token:
+          type: string
+          description: Token JWT generado.
+        token_type:
+          type: string
+          example: Bearer
+        usuario:
+          type: object
+          properties:
+            id_usuario:
+              type: integer
+              example: 1
+            nombre:
+              type: string
+              example: Usuario Prueba
+            correo:
+              type: string
+              example: usuario.prueba@example.com
+            rol:
+              type: string
+              example: usuario
+
+  400:
+    description: Datos de autenticación inválidos.
+  401:
+    description: Credenciales incorrectas.
+  403:
+    description: Cuenta deshabilitada.
+  429:
+    description: Demasiados intentos de inicio de sesión.
+  500:
+    description: Error interno del servidor.

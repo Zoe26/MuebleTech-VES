@@ -6,33 +6,64 @@ from flask import Flask, jsonify, request
 from app.routes.productos_routes import productos_bp
 from flasgger import Swagger
 from config import Config
-from app.extensions import db, migrate
-# Modelos de PostgreSQL
+from app.extensions import db, migrate, bcrypt, jwt, cors, limiter
 from app.models.categoria_db import CategoriaDB
 from app.models.producto_db import ProductoDB
+from app.models.usuario_db import UsuarioDB
+from app.routes.auth_routes import auth_bp
 
-
-
-# Crear aplicación Flask
 app = Flask(__name__)
 
-
-# Configurar conexión con PostgreSQL
 app.config.from_object(Config)
 
-# Inicializar SQLAlchemy
+# Inicializar las extensiones
 db.init_app(app)
-
-# Inicializar Flask-Migrate
 migrate.init_app(app, db)
+bcrypt.init_app(app)
+jwt.init_app(app)
+
+cors.init_app(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": app.config["CORS_ORIGINS"],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"]
+        }
+    }
+)
+
+limiter.init_app(app)
 
 
 # Registrar las rutas del Blueprint
 app.register_blueprint(productos_bp)
+app.register_blueprint(auth_bp)
 
 
-# Configurar Swagger para documentar nuestra API REST
-swagger = Swagger(app)
+
+# Configuración de seguridad para Swagger
+swagger_config = {
+    "swagger": "2.0",
+    "info": {
+        "title": "MuebleTech VES API",
+        "version": "1.0.0",
+        "description": "API REST para la gestión de muebles industriales"
+    },
+    "securityDefinitions": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": (
+                "Ingrese: Bearer seguido de un espacio "
+                "y su token JWT."
+            )
+        }
+    }
+}
+
+swagger = Swagger(app, template=swagger_config)
 
 
 
@@ -71,6 +102,16 @@ def error_interno(error):
     }), 500
 
 
+# Manejo de errores HTTP 429:
+# demasiadas solicitudes al servidor
+@app.errorhandler(429)
+def demasiadas_solicitudes(error):
+    return jsonify({
+        "mensaje": "Demasiados intentos. Intente nuevamente más tarde.",
+        "codigo": 429
+    }), 429
+
+
 # Ruta principal
 @app.route("/", methods=["GET"])
 def inicio():
@@ -84,3 +125,6 @@ def inicio():
 # Ejecutar el servidor
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+

@@ -1,25 +1,31 @@
 
 # Proyecto: MuebleTech VES
 # Controladores de productos
+# Sesión 6: Autorización mediante JWT y roles
+
+from pathlib import Path
 
 from flask import jsonify, request
-from app.services.productos_data import productos
 from flasgger import swag_from
-from pathlib import Path
-from app.models.producto_db import ProductoDB
-from app.extensions import db
-from app.models.categoria_db import CategoriaDB
-from app.models.producto import Producto
 
-# Documentación Swagger de GET
+from app.extensions import db
+from app.models.producto import Producto
+from app.models.producto_db import ProductoDB
+from app.models.categoria_db import CategoriaDB
+from app.services.autorizacion_service import admin_required
+
+
+# =========================================================
+# GET: CONSULTAR TODOS LOS PRODUCTOS
+# Acceso público
+# =========================================================
+
 @swag_from(
     str(
         Path(__file__).resolve().parents[2]
         / "docs" / "swagger" / "productos_get.yml"
     )
 )
-# Controller GET: Consultar todos los productos
-
 def listar_productos():
 
     # Consultar los productos almacenados en PostgreSQL
@@ -27,7 +33,7 @@ def listar_productos():
         db.select(ProductoDB).order_by(ProductoDB.codigo)
     ).scalars().all()
 
-    # Convertir los resultados en diccionarios
+    # Convertir los registros en diccionarios
     productos = []
 
     for p in registros:
@@ -46,6 +52,10 @@ def listar_productos():
     }), 200
 
 
+# =========================================================
+# POST: REGISTRAR UN PRODUCTO
+# Acceso exclusivo para administradores
+# =========================================================
 
 @swag_from(
     str(
@@ -53,15 +63,17 @@ def listar_productos():
         / "docs" / "swagger" / "productos_post.yml"
     )
 )
-# Controller POST: Registrar producto en PostgreSQL
+@admin_required
 def registrar_producto():
+
     datos = request.get_json(silent=True)
+
     if not isinstance(datos, dict):
         return jsonify({
             "mensaje": "Debe enviar un objeto JSON válido"
         }), 400
 
-    # Campos requeridos
+    # Verificar campos obligatorios
     campos = ["nombre", "precio", "stock", "id_categoria"]
 
     for campo in campos:
@@ -86,7 +98,7 @@ def registrar_producto():
             "mensaje": "La categoría indicada no existe"
         }), 400
 
-    # Conservar las validaciones de nuestra clase Producto
+    # Validar mediante la clase Producto existente
     try:
         producto_validado = Producto(
             codigo=1,
@@ -95,12 +107,13 @@ def registrar_producto():
             stock=datos["stock"],
             categoria=categoria.nombre
         )
+
     except (ValueError, TypeError) as error:
         return jsonify({
             "mensaje": str(error)
         }), 400
 
-    # Crear el registro de PostgreSQL
+    # Crear el registro en PostgreSQL
     nuevo = ProductoDB(
         nombre=producto_validado.nombre,
         precio=producto_validado.precio,
@@ -111,8 +124,10 @@ def registrar_producto():
     try:
         db.session.add(nuevo)
         db.session.commit()
+
     except Exception:
         db.session.rollback()
+
         return jsonify({
             "mensaje": "No se pudo registrar el producto"
         }), 500
@@ -130,13 +145,18 @@ def registrar_producto():
     }), 201
 
 
+# =========================================================
+# PUT: ACTUALIZAR UN PRODUCTO
+# Acceso exclusivo para administradores
+# =========================================================
+
 @swag_from(
     str(
         Path(__file__).resolve().parents[2]
         / "docs" / "swagger" / "productos_put.yml"
     )
 )
-# Controller PUT: Actualizar un producto en PostgreSQL
+@admin_required
 def actualizar_producto(codigo):
 
     # Buscar el producto en PostgreSQL
@@ -147,7 +167,7 @@ def actualizar_producto(codigo):
             "mensaje": "Producto no encontrado"
         }), 404
 
-    # Obtener el JSON enviado por el cliente
+    # Obtener los datos enviados
     datos = request.get_json(silent=True)
 
     if not isinstance(datos, dict):
@@ -179,7 +199,7 @@ def actualizar_producto(codigo):
             "mensaje": "La categoría indicada no existe"
         }), 400
 
-    # Validar los datos mediante nuestra clase Producto
+    # Validar mediante la clase Producto existente
     try:
         producto_validado = Producto(
             codigo=codigo,
@@ -188,12 +208,13 @@ def actualizar_producto(codigo):
             stock=datos["stock"],
             categoria=categoria.nombre
         )
+
     except (ValueError, TypeError) as error:
         return jsonify({
             "mensaje": str(error)
         }), 400
 
-    # Actualizar el producto
+    # Actualizar los campos
     producto.nombre = producto_validado.nombre
     producto.precio = producto_validado.precio
     producto.stock = producto_validado.stock
@@ -201,8 +222,10 @@ def actualizar_producto(codigo):
 
     try:
         db.session.commit()
+
     except Exception:
         db.session.rollback()
+
         return jsonify({
             "mensaje": "No se pudo actualizar el producto"
         }), 500
@@ -220,25 +243,29 @@ def actualizar_producto(codigo):
     }), 200
 
 
+# =========================================================
+# DELETE: ELIMINAR UN PRODUCTO
+# Acceso exclusivo para administradores
+# =========================================================
+
 @swag_from(
     str(
         Path(__file__).resolve().parents[2]
         / "docs" / "swagger" / "productos_delete.yml"
     )
 )
-# Controller DELETE: Eliminar producto de PostgreSQL
+@admin_required
 def eliminar_producto(codigo):
 
-    # 1. Buscar el producto por su código
+    # Buscar el producto en PostgreSQL
     producto = db.session.get(ProductoDB, codigo)
 
-    # 2. Comprobar si existe
     if producto is None:
         return jsonify({
             "mensaje": "Producto no encontrado"
         }), 404
 
-    # 3. Guardar los datos antes de eliminarlo
+    # Guardar los datos antes de eliminarlo
     datos_producto = {
         "codigo": producto.codigo,
         "nombre": producto.nombre,
@@ -247,18 +274,18 @@ def eliminar_producto(codigo):
         "id_categoria": producto.id_categoria
     }
 
-    # 4. Eliminar el producto de PostgreSQL
+    # Eliminar el producto
     try:
         db.session.delete(producto)
         db.session.commit()
 
     except Exception:
         db.session.rollback()
+
         return jsonify({
             "mensaje": "No se pudo eliminar el producto"
         }), 500
 
-    # 5. Confirmar la eliminación
     return jsonify({
         "mensaje": "Producto eliminado correctamente",
         "producto": datos_producto

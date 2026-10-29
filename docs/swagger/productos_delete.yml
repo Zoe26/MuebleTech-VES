@@ -45,6 +45,11 @@ responses:
             id_categoria:
               type: integer
               example: 1
+  
+  401:
+    description: Token JWT ausente, inválido o vencido.
+  403:
+    description: Usuario sin permisos de administrador.
 
   404:
     description: Producto no encontrado.
@@ -57,3 +62,9 @@ responses:
 
   500:
     description: Error al eliminar el producto.
+
+
+
+
+security:
+  - Bearer: []

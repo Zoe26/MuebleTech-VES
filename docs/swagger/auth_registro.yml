@@ -1,0 +1,52 @@
+
+tags:
+  - Autenticación
+
+summary: Registrar usuario
+description: >
+  Registra un usuario en PostgreSQL.
+  La contraseña se protege mediante bcrypt.
+  Los nuevos usuarios reciben el rol usuario.
+
+consumes:
+  - application/json
+
+produces:
+  - application/json
+
+parameters:
+  - in: body
+    name: body
+    required: true
+    description: Datos para registrar un usuario.
+    schema:
+      type: object
+      required:
+        - nombre
+        - correo
+        - password
+      properties:
+        nombre:
+          type: string
+          example: Usuario Prueba
+        correo:
+          type: string
+          format: email
+          example: prueba@example.com
+        password:
+          type: string
+          format: password
+          description: Contraseña de al menos 12 caracteres.
+          example: ClaveSegura2026!
+
+responses:
+  201:
+    description: Usuario registrado correctamente.
+  400:
+    description: Datos inválidos o incompletos.
+  409:
+    description: El correo ya está registrado.
+  429:
+    description: Demasiadas solicitudes, si se configura un límite.
+  500:
+    description: Error interno del servidor.
