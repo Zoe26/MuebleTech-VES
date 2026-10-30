@@ -34,7 +34,7 @@ def listar_productos():
     # Construir la consulta de productos
     consulta = db.select(ProductoDB)
 
-    # Aplicar el filtro cuando se proporciona una categoría
+    # Validar y aplicar el filtro de categoría
     if categoria is not None:
 
         if not categoria.isdigit() or int(categoria) <= 0:
@@ -83,11 +83,12 @@ def listar_productos():
 )
 def registrar_producto():
 
+    # Obtener los datos enviados en formato JSON
     datos = request.get_json(silent=True)
 
     if not isinstance(datos, dict):
         return jsonify({
-            "mensaje": "Debe enviar un objeto JSON válido"
+            "error": "Debe enviar un objeto JSON válido"
         }), 400
 
     # Verificar campos obligatorios
@@ -96,7 +97,7 @@ def registrar_producto():
     for campo in campos:
         if campo not in datos:
             return jsonify({
-                "mensaje": f"Falta el campo: {campo}"
+                "error": f"Falta el campo: {campo}"
             }), 400
 
     # Validar el identificador de categoría
@@ -104,7 +105,7 @@ def registrar_producto():
 
     if type(id_categoria) is not int or id_categoria <= 0:
         return jsonify({
-            "mensaje": "id_categoria debe ser un entero positivo"
+            "error": "id_categoria debe ser un entero positivo"
         }), 400
 
     # Verificar que la categoría exista
@@ -112,10 +113,10 @@ def registrar_producto():
 
     if categoria is None:
         return jsonify({
-            "mensaje": "La categoría indicada no existe"
+            "error": "La categoría indicada no existe"
         }), 400
 
-    # Validar mediante la clase Producto existente
+    # Validar los datos mediante la clase Producto
     try:
         producto_validado = Producto(
             codigo=1,
@@ -127,7 +128,7 @@ def registrar_producto():
 
     except (ValueError, TypeError) as error:
         return jsonify({
-            "mensaje": str(error)
+            "error": str(error)
         }), 400
 
     # Crear el registro en PostgreSQL
@@ -145,7 +146,7 @@ def registrar_producto():
     except Exception:
         db.session.rollback()
         return jsonify({
-            "mensaje": "No se pudo registrar el producto"
+            "error": "No se pudo registrar el producto"
         }), 500
 
     return jsonify({
@@ -179,14 +180,15 @@ def actualizar_producto(codigo):
 
     if producto is None:
         return jsonify({
-            "mensaje": "Producto no encontrado"
+            "error": "Producto no encontrado"
         }), 404
 
+    # Obtener los datos enviados en formato JSON
     datos = request.get_json(silent=True)
 
     if not isinstance(datos, dict):
         return jsonify({
-            "mensaje": "Debe enviar un objeto JSON válido"
+            "error": "Debe enviar un objeto JSON válido"
         }), 400
 
     # Verificar campos obligatorios
@@ -195,7 +197,7 @@ def actualizar_producto(codigo):
     for campo in campos:
         if campo not in datos:
             return jsonify({
-                "mensaje": f"Falta el campo: {campo}"
+                "error": f"Falta el campo: {campo}"
             }), 400
 
     # Validar el identificador de categoría
@@ -203,14 +205,15 @@ def actualizar_producto(codigo):
 
     if type(id_categoria) is not int or id_categoria <= 0:
         return jsonify({
-            "mensaje": "id_categoria debe ser un entero positivo"
+            "error": "id_categoria debe ser un entero positivo"
         }), 400
 
+    # Verificar que la categoría exista
     categoria = db.session.get(CategoriaDB, id_categoria)
 
     if categoria is None:
         return jsonify({
-            "mensaje": "La categoría indicada no existe"
+            "error": "La categoría indicada no existe"
         }), 400
 
     # Validar mediante la clase Producto existente
@@ -225,10 +228,10 @@ def actualizar_producto(codigo):
 
     except (ValueError, TypeError) as error:
         return jsonify({
-            "mensaje": str(error)
+            "error": str(error)
         }), 400
 
-    # Actualizar el producto
+    # Actualizar los datos del producto
     producto.nombre = producto_validado.nombre
     producto.precio = producto_validado.precio
     producto.stock = producto_validado.stock
@@ -240,7 +243,7 @@ def actualizar_producto(codigo):
     except Exception:
         db.session.rollback()
         return jsonify({
-            "mensaje": "No se pudo actualizar el producto"
+            "error": "No se pudo actualizar el producto"
         }), 500
 
     return jsonify({
@@ -274,7 +277,7 @@ def eliminar_producto(codigo):
 
     if producto is None:
         return jsonify({
-            "mensaje": "Producto no encontrado"
+            "error": "Producto no encontrado"
         }), 404
 
     # Guardar los datos antes de eliminar
@@ -293,7 +296,7 @@ def eliminar_producto(codigo):
     except Exception:
         db.session.rollback()
         return jsonify({
-            "mensaje": "No se pudo eliminar el producto"
+            "error": "No se pudo eliminar el producto"
         }), 500
 
     return jsonify({
