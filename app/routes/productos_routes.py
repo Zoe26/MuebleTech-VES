@@ -1,6 +1,6 @@
 
 # Proyecto: MuebleTech VES
-# Sesión 4: Rutas de productos con Flask Blueprints
+# Rutas de productos con Flask Blueprints y control de roles
 
 from flask import Blueprint, jsonify
 
@@ -11,14 +11,20 @@ from app.controllers.productos_controller import (
     eliminar_producto
 )
 
-# Crear el Blueprint para productos
+from app.services.autorizacion_service import (
+    editor_required,
+    admin_required
+)
+
+
 productos_bp = Blueprint(
-    "productos",
+    "productos_bp",
     __name__,
     url_prefix="/api/productos"
 )
 
-# Ruta de prueba del Blueprint
+
+# GET: Ruta de prueba
 @productos_bp.route("/prueba", methods=["GET"])
 def probar_blueprint():
     return jsonify({
@@ -27,6 +33,7 @@ def probar_blueprint():
 
 
 # GET: Consultar productos
+# Acceso público (incluye usuarios CONSULTA)
 productos_bp.add_url_rule(
     "",
     endpoint="listar_productos",
@@ -34,26 +41,32 @@ productos_bp.add_url_rule(
     methods=["GET"]
 )
 
+
 # POST: Registrar productos
+# Solo EDITOR y ADMIN
 productos_bp.add_url_rule(
     "",
     endpoint="registrar_producto",
-    view_func=registrar_producto,
+    view_func=editor_required(registrar_producto),
     methods=["POST"]
 )
 
+
 # PUT: Actualizar productos
+# Solo EDITOR y ADMIN
 productos_bp.add_url_rule(
     "/<int:codigo>",
     endpoint="actualizar_producto",
-    view_func=actualizar_producto,
+    view_func=editor_required(actualizar_producto),
     methods=["PUT"]
 )
 
+
 # DELETE: Eliminar productos
+# Solo ADMIN
 productos_bp.add_url_rule(
     "/<int:codigo>",
     endpoint="eliminar_producto",
-    view_func=eliminar_producto,
+    view_func=admin_required(eliminar_producto),
     methods=["DELETE"]
 )

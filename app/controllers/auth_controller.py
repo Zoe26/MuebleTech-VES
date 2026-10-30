@@ -1,16 +1,27 @@
 
+# Proyecto: MuebleTech VES
+# Controlador de autenticación y registro de usuarios
+# Roles: CONSULTA, EDITOR y ADMIN
+
+from pathlib import Path
+
 from flask import request, jsonify
 from sqlalchemy.exc import IntegrityError
+from flask_jwt_extended import create_access_token
+from flasgger import swag_from
 
 from app.extensions import db
 from app.models.usuario_db import UsuarioDB
-from app.services.seguridad_service import generar_hash_password
+from app.services.seguridad_service import (
+    generar_hash_password,
+    verificar_password
+)
 
-from flask_jwt_extended import create_access_token
-from app.services.seguridad_service import verificar_password
-from flasgger import swag_from
-from pathlib import Path
 
+# =========================================================
+# POST: REGISTRAR USUARIO
+# El usuario recibe el rol CONSULTA por defecto
+# =========================================================
 
 @swag_from(
     str(
@@ -20,7 +31,6 @@ from pathlib import Path
 )
 def registrar_usuario():
 
-    # 1. Recibir la información enviada como JSON
     datos = request.get_json(silent=True)
 
     if not isinstance(datos, dict):
@@ -28,7 +38,7 @@ def registrar_usuario():
             "mensaje": "Debe enviar un objeto JSON válido"
         }), 400
 
-    # 2. Verificar los campos obligatorios
+    # Verificar campos obligatorios
     campos = ["nombre", "correo", "password"]
 
     for campo in campos:
@@ -37,21 +47,24 @@ def registrar_usuario():
                 "mensaje": f"Falta el campo: {campo}"
             }), 400
 
-    # 3. Validar los datos recibidos
     nombre = datos["nombre"]
     correo = datos["correo"]
     password = datos["password"]
 
+    # Validar nombre
     if not isinstance(nombre, str) or not nombre.strip():
         return jsonify({
             "mensaje": "El nombre es obligatorio"
         }), 400
 
-    if len(nombre.strip()) > 100:
+    nombre = nombre.strip()
+
+    if len(nombre) > 100:
         return jsonify({
             "mensaje": "El nombre no debe superar 100 caracteres"
         }), 400
 
+    # Validar correo
     if not isinstance(correo, str) or not correo.strip():
         return jsonify({
             "mensaje": "El correo es obligatorio"
@@ -68,13 +81,13 @@ def registrar_usuario():
             "mensaje": "Ingrese un correo electrónico válido"
         }), 400
 
-    # 4. Impedir que el usuario asigne su propio rol
+    # Evitar asignación de privilegios desde el registro público
     if "rol" in datos or "activo" in datos:
         return jsonify({
             "mensaje": "No se permite asignar rol ni estado"
         }), 400
 
-    # 5. Verificar que el correo no esté registrado
+    # Verificar correo duplicado
     existente = db.session.execute(
         db.select(UsuarioDB).filter_by(correo=correo)
     ).scalar_one_or_none()
@@ -84,24 +97,24 @@ def registrar_usuario():
             "mensaje": "El correo ya está registrado"
         }), 409
 
-    # 6. Generar el hash de la contraseña
+    # Generar hash seguro de la contraseña
     try:
         password_hash = generar_hash_password(password)
+
     except (ValueError, TypeError) as error:
         return jsonify({
             "mensaje": str(error)
         }), 400
 
-    # 7. Crear el usuario con rol predeterminado
+    # Registrar como CONSULTA por defecto
     nuevo_usuario = UsuarioDB(
-        nombre=nombre.strip(),
+        nombre=nombre,
         correo=correo,
         password_hash=password_hash,
-        rol="usuario",
+        rol="CONSULTA",
         activo=True
     )
 
-    # 8. Guardar en PostgreSQL
     try:
         db.session.add(nuevo_usuario)
         db.session.commit()
@@ -118,7 +131,7 @@ def registrar_usuario():
             "mensaje": "No se pudo registrar el usuario"
         }), 500
 
-    # 9. Responder sin exponer el hash
+    # Responder sin exponer la contraseña ni su hash
     return jsonify({
         "mensaje": "Usuario registrado correctamente",
         "usuario": {
@@ -129,6 +142,11 @@ def registrar_usuario():
         }
     }), 201
 
+
+# =========================================================
+# POST: INICIAR SESIÓN
+# Autenticación con bcrypt y generación de JWT
+# =========================================================
 
 @swag_from(
     str(
@@ -176,6 +194,7 @@ def iniciar_sesion():
             "mensaje": "Cuenta deshabilitada"
         }), 403
 
+    # JWT con identidad del usuario
     access_token = create_access_token(
         identity=str(usuario.id_usuario)
     )

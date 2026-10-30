@@ -1,7 +1,7 @@
 
 # Proyecto: MuebleTech VES
 # Controladores de productos
-# Sesión 6: Autorización mediante JWT y roles
+# Autorización JWT y roles aplicada desde productos_routes.py
 
 from pathlib import Path
 
@@ -12,12 +12,12 @@ from app.extensions import db
 from app.models.producto import Producto
 from app.models.producto_db import ProductoDB
 from app.models.categoria_db import CategoriaDB
-from app.services.autorizacion_service import admin_required
 
 
 # =========================================================
-# GET: CONSULTAR TODOS LOS PRODUCTOS
+# GET: CONSULTAR PRODUCTOS
 # Acceso público
+# Permite filtrar mediante ?categoria=1
 # =========================================================
 
 @swag_from(
@@ -28,12 +28,29 @@ from app.services.autorizacion_service import admin_required
 )
 def listar_productos():
 
-    # Consultar los productos almacenados en PostgreSQL
+    # Obtener el filtro opcional de categoría
+    categoria = request.args.get("categoria")
+
+    # Construir la consulta de productos
+    consulta = db.select(ProductoDB)
+
+    # Aplicar el filtro cuando se proporciona una categoría
+    if categoria is not None:
+
+        if not categoria.isdigit() or int(categoria) <= 0:
+            return jsonify({
+                "error": "La categoría debe ser un entero positivo"
+            }), 400
+
+        consulta = consulta.where(
+            ProductoDB.id_categoria == int(categoria)
+        )
+
+    # Consultar los productos en PostgreSQL
     registros = db.session.execute(
-        db.select(ProductoDB).order_by(ProductoDB.codigo)
+        consulta.order_by(ProductoDB.codigo)
     ).scalars().all()
 
-    # Convertir los registros en diccionarios
     productos = []
 
     for p in registros:
@@ -42,6 +59,7 @@ def listar_productos():
             "nombre": p.nombre,
             "precio": float(p.precio),
             "stock": p.stock,
+            "id_categoria": p.id_categoria,
             "categoria": p.categoria.nombre
         })
 
@@ -54,7 +72,7 @@ def listar_productos():
 
 # =========================================================
 # POST: REGISTRAR UN PRODUCTO
-# Acceso exclusivo para administradores
+# Permitido para EDITOR y ADMIN desde las rutas
 # =========================================================
 
 @swag_from(
@@ -63,7 +81,6 @@ def listar_productos():
         / "docs" / "swagger" / "productos_post.yml"
     )
 )
-@admin_required
 def registrar_producto():
 
     datos = request.get_json(silent=True)
@@ -127,7 +144,6 @@ def registrar_producto():
 
     except Exception:
         db.session.rollback()
-
         return jsonify({
             "mensaje": "No se pudo registrar el producto"
         }), 500
@@ -147,7 +163,7 @@ def registrar_producto():
 
 # =========================================================
 # PUT: ACTUALIZAR UN PRODUCTO
-# Acceso exclusivo para administradores
+# Permitido para EDITOR y ADMIN desde las rutas
 # =========================================================
 
 @swag_from(
@@ -156,7 +172,6 @@ def registrar_producto():
         / "docs" / "swagger" / "productos_put.yml"
     )
 )
-@admin_required
 def actualizar_producto(codigo):
 
     # Buscar el producto en PostgreSQL
@@ -167,7 +182,6 @@ def actualizar_producto(codigo):
             "mensaje": "Producto no encontrado"
         }), 404
 
-    # Obtener los datos enviados
     datos = request.get_json(silent=True)
 
     if not isinstance(datos, dict):
@@ -184,7 +198,7 @@ def actualizar_producto(codigo):
                 "mensaje": f"Falta el campo: {campo}"
             }), 400
 
-    # Validar la categoría
+    # Validar el identificador de categoría
     id_categoria = datos["id_categoria"]
 
     if type(id_categoria) is not int or id_categoria <= 0:
@@ -214,7 +228,7 @@ def actualizar_producto(codigo):
             "mensaje": str(error)
         }), 400
 
-    # Actualizar los campos
+    # Actualizar el producto
     producto.nombre = producto_validado.nombre
     producto.precio = producto_validado.precio
     producto.stock = producto_validado.stock
@@ -225,7 +239,6 @@ def actualizar_producto(codigo):
 
     except Exception:
         db.session.rollback()
-
         return jsonify({
             "mensaje": "No se pudo actualizar el producto"
         }), 500
@@ -245,7 +258,7 @@ def actualizar_producto(codigo):
 
 # =========================================================
 # DELETE: ELIMINAR UN PRODUCTO
-# Acceso exclusivo para administradores
+# Permitido únicamente para ADMIN desde las rutas
 # =========================================================
 
 @swag_from(
@@ -254,7 +267,6 @@ def actualizar_producto(codigo):
         / "docs" / "swagger" / "productos_delete.yml"
     )
 )
-@admin_required
 def eliminar_producto(codigo):
 
     # Buscar el producto en PostgreSQL
@@ -265,7 +277,7 @@ def eliminar_producto(codigo):
             "mensaje": "Producto no encontrado"
         }), 404
 
-    # Guardar los datos antes de eliminarlo
+    # Guardar los datos antes de eliminar
     datos_producto = {
         "codigo": producto.codigo,
         "nombre": producto.nombre,
@@ -274,14 +286,12 @@ def eliminar_producto(codigo):
         "id_categoria": producto.id_categoria
     }
 
-    # Eliminar el producto
     try:
         db.session.delete(producto)
         db.session.commit()
 
     except Exception:
         db.session.rollback()
-
         return jsonify({
             "mensaje": "No se pudo eliminar el producto"
         }), 500

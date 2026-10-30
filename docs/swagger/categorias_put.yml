@@ -1,0 +1,52 @@
+
+tags:
+  - Categorías
+
+summary: Actualizar una categoría
+description: Permite actualizar una categoría. Requiere rol EDITOR o ADMIN.
+
+consumes:
+  - application/json
+produces:
+  - application/json
+
+security:
+  - Bearer: []
+
+parameters:
+  - in: path
+    name: id_categoria
+    type: integer
+    required: true
+    description: Identificador de la categoría
+
+  - in: body
+    name: body
+    required: true
+    schema:
+      type: object
+      required:
+        - nombre
+      properties:
+        nombre:
+          type: string
+          example: Mesas industriales
+        descripcion:
+          type: string
+          example: Muebles industriales de metal
+
+responses:
+  200:
+    description: Categoría actualizada correctamente
+  400:
+    description: Datos inválidos
+  401:
+    description: Token ausente o inválido
+  403:
+    description: Usuario sin permisos
+  404:
+    description: Categoría no encontrada
+  409:
+    description: Nombre de categoría duplicado
+  500:
+    description: Error interno del servidor

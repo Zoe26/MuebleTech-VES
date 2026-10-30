@@ -4,6 +4,7 @@
 
 from flask import Flask, jsonify, request
 from app.routes.productos_routes import productos_bp
+from app.routes.categorias_routes import categorias_bp
 from flasgger import Swagger
 from config import Config
 from app.extensions import db, migrate, bcrypt, jwt, cors, limiter
@@ -38,6 +39,7 @@ limiter.init_app(app)
 
 # Registrar las rutas del Blueprint
 app.register_blueprint(productos_bp)
+app.register_blueprint(categorias_bp)
 app.register_blueprint(auth_bp)
 
 

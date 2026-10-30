@@ -27,17 +27,17 @@ class UsuarioDB(db.Model):
         nullable=False
     )
 
-    # Hash de la contraseña, nunca texto plano
+    # Contraseña protegida mediante bcrypt
     password_hash = db.Column(
         db.String(255),
         nullable=False
     )
 
-    # Rol del usuario: admin o usuario
+    # Roles permitidos: CONSULTA, EDITOR y ADMIN
     rol = db.Column(
         db.String(20),
         nullable=False,
-        default="usuario"
+        default="CONSULTA"
     )
 
     # Estado de la cuenta

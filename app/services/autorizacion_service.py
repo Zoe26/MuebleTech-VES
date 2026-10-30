@@ -10,42 +10,57 @@ from app.extensions import db
 from app.models.usuario_db import UsuarioDB
 
 
-def admin_required(func):
+def roles_required(*roles_permitidos):
     """
     Permite el acceso únicamente a usuarios
-    autenticados que tengan el rol admin.
+    autenticados con uno de los roles autorizados.
     """
 
-    @wraps(func)
-    @jwt_required()
-    def wrapper(*args, **kwargs):
+    def decorador(func):
 
-        # Obtener el ID del usuario desde el JWT
-        id_usuario = get_jwt_identity()
+        @wraps(func)
+        @jwt_required()
+        def wrapper(*args, **kwargs):
 
-        try:
-            id_usuario = int(id_usuario)
-        except (TypeError, ValueError):
-            return jsonify({
-                "mensaje": "Identidad de usuario inválida"
-            }), 401
+            id_usuario = get_jwt_identity()
 
-        # Consultar el usuario en PostgreSQL
-        usuario = db.session.get(UsuarioDB, id_usuario)
+            try:
+                id_usuario = int(id_usuario)
+            except (TypeError, ValueError):
+                return jsonify({
+                    "error": "Identidad de usuario inválida"
+                }), 401
 
-        # Verificar que exista y esté activo
-        if usuario is None or not usuario.activo:
-            return jsonify({
-                "mensaje": "Usuario no autorizado"
-            }), 403
+            usuario = db.session.get(UsuarioDB, id_usuario)
 
-        # Verificar los permisos de administrador
-        if usuario.rol != "admin":
-            return jsonify({
-                "mensaje": "No tiene permisos para esta operación"
-            }), 403
+            if usuario is None or not usuario.activo:
+                return jsonify({
+                    "error": "Usuario no autorizado"
+                }), 403
 
-        # Ejecutar el Controller autorizado
-        return func(*args, **kwargs)
+            # Compatible con roles anteriores y nuevos
+            rol = str(usuario.rol).upper()
 
-    return wrapper
+            if rol == "USUARIO":
+                rol = "CONSULTA"
+
+            if rol not in roles_permitidos:
+                return jsonify({
+                    "error": "No tiene permisos para esta operación"
+                }), 403
+
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorador
+
+
+def admin_required(func):
+    """Solo ADMIN puede realizar esta operación."""
+    return roles_required("ADMIN")(func)
+
+
+def editor_required(func):
+    """EDITOR y ADMIN pueden crear o editar."""
+    return roles_required("EDITOR", "ADMIN")(func)
