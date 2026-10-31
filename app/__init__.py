@@ -29,6 +29,40 @@ def create_app():
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     jwt.init_app(app)
+    
+    
+    # Respuestas JSON uniformes para errores JWT
+
+    @jwt.expired_token_loader
+    def token_expirado(jwt_header, jwt_payload):
+        return jsonify({
+            "error": "El token ha expirado"
+        }), 401
+
+    @jwt.invalid_token_loader
+    def token_invalido(motivo):
+        return jsonify({
+            "error": "Token inválido"
+        }), 422
+
+    @jwt.unauthorized_loader
+    def token_ausente(motivo):
+        return jsonify({
+            "error": "Se requiere autenticación JWT"
+        }), 401
+
+    @jwt.revoked_token_loader
+    def token_revocado(jwt_header, jwt_payload):
+        return jsonify({
+            "error": "Token revocado"
+        }), 401
+
+    @jwt.needs_fresh_token_loader
+    def token_no_reciente(jwt_header, jwt_payload):
+        return jsonify({
+            "error": "Se requiere un token reciente"
+        }), 401
+
 
     cors.init_app(
         app,
